@@ -118,6 +118,7 @@ end)
 -- MAIN FUNCTIONALITY
 local matchedTools = {}
 local petNames = {
+    ["Snail"] = true,
     ["Silver Monkey"] = true,
     ["Queen Bee"] = true,
     ["Raccoon"] = true,
