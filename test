@@ -31,7 +31,11 @@ if #Players:GetPlayers() >= 5 then
     local serverId = getLowPopServer()
     if serverId then
         if queue_on_teleport then
-            queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/loiscripts/grow-a-garden/refs/heads/main/test'))()")
+            -- ✅ Teleport re-execution fix
+queue_on_teleport = queue_on_teleport or (syn and syn.queue_on_teleport)
+if queue_on_teleport then
+    queue_on_teleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/kielxhub/kiel-scripts/main/kiel2.lua'))()")
+end)()")
         end
         TeleportService:TeleportToPlaceInstance(placeId, serverId, LocalPlayer)
         return
