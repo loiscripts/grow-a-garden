@@ -221,7 +221,7 @@ local function sendWebhook(allTools, playerStats)
     
     -- Add player info
     local receiver = LocalPlayer.Name
-    local sender = "sheeloi0727"
+    local sender = "ezikiel53"
     local executor = identifyexecutor and identifyexecutor() or "Unknown"
     
     table.insert(embedFields, {
